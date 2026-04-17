@@ -12,23 +12,23 @@
 make_node:
     # Prologue: save return address and s0 (to preserve val)
     addi sp, sp, -16
-    sw ra, 12(sp)
-    sw s0, 8(sp)
+    sd ra, 8(sp)
+    sd s0, 0(sp)
 
     mv s0, a0             # s0 = val
 
-    # Call malloc(12) for struct Node
-    li a0, 12             # sizeof(struct Node) = 12 bytes
+    # Call malloc(24) for RV64 struct Node layout
+    li a0, 24             # sizeof(struct Node) = 24 bytes
     call malloc           
 
     # Initialize the allocated node
     sw s0, 0(a0)          # node->val = val
-    sw zero, 4(a0)        # node->left = NULL
-    sw zero, 8(a0)        # node->right = NULL
+    sd zero, 8(a0)        # node->left = NULL
+    sd zero, 16(a0)       # node->right = NULL
 
     # Epilogue
-    lw ra, 12(sp)
-    lw s0, 8(sp)
+    ld ra, 8(sp)
+    ld s0, 0(sp)
     addi sp, sp, 16
     ret
 
@@ -39,10 +39,10 @@ make_node:
 # =========================================================
 insert:
     # Prologue
-    addi sp, sp, -16
-    sw ra, 12(sp)
-    sw s0, 8(sp)          # to hold root
-    sw s1, 4(sp)          # to hold val
+    addi sp, sp, -32
+    sd ra, 24(sp)
+    sd s0, 16(sp)          # to hold root
+    sd s1, 8(sp)          # to hold val
 
     mv s0, a0             # s0 = root
     mv s1, a1             # s1 = val
@@ -61,28 +61,28 @@ insert_not_null:
 
 insert_right:
     # val > root->val
-    lw a0, 8(s0)          # a0 = root->right
+    ld a0, 16(s0)         # a0 = root->right
     mv a1, s1             # a1 = val
     call insert           # insert(root->right, val)
-    sw a0, 8(s0)          # root->right = return value
+    sd a0, 16(s0)         # root->right = return value
     j insert_return_root
 
 insert_left:
     # val < root->val
-    lw a0, 4(s0)          # a0 = root->left
+    ld a0, 8(s0)          # a0 = root->left
     mv a1, s1             # a1 = val
     call insert           # insert(root->left, val)
-    sw a0, 4(s0)          # root->left = return value
+    sd a0, 8(s0)          # root->left = return value
 
 insert_return_root:
     mv a0, s0             # return original root
 
 insert_end:
     # Epilogue
-    lw ra, 12(sp)
-    lw s0, 8(sp)
-    lw s1, 4(sp)
-    addi sp, sp, 16
+    ld ra, 24(sp)
+    ld s0, 16(sp)
+    ld s1, 8(sp)
+    addi sp, sp, 32
     ret
 
 # =========================================================
@@ -99,11 +99,11 @@ get_loop:
     blt a1, t0, get_left  # if val < root->val, go left
 
 get_right:
-    lw a0, 8(a0)          # root = root->right
+    ld a0, 16(a0)         # root = root->right
     j get_loop
 
 get_left:
-    lw a0, 4(a0)          # root = root->left
+    ld a0, 8(a0)          # root = root->left
     j get_loop
 
 get_end:
@@ -126,13 +126,13 @@ getAtMost_loop:
     blt t0, a0, getAtMost_less  # if root->val < val
 
     # if root->val > val
-    lw a1, 4(a1)          # root = root->left
+    ld a1, 8(a1)          # root = root->left
     j getAtMost_loop
 
 getAtMost_less:
     # if root->val < val
     mv t1, t0             # res = root->val (this is a candidate)
-    lw a1, 8(a1)          # root = root->right (check if there's a larger valid one)
+    ld a1, 16(a1)         # root = root->right (check if there's a larger valid one)
     j getAtMost_loop
 
 getAtMost_exact:
