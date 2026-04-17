@@ -9,9 +9,9 @@
     char_right: .space 1
 
 .text
-.global _start
+.global main
 
-_start:
+main:
     # ==========================================
     # 1. Open the file "input.txt"
     # ==========================================
