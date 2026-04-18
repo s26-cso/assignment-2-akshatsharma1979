@@ -1,5 +1,6 @@
 .data
 fmt:        .asciz "%d "
+fmt_last:   .asciz "%d"
 newline:    .asciz "\n"
 
 .text
@@ -69,7 +70,15 @@ print_loop:
     slli t0, s5, 2
     add t1, s4, t0
     lw a1, 0(t1)        
-    la a0, fmt          
+    addi t2, s2, -1
+    beq s5, t2, print_last
+    la a0, fmt
+    j print_value
+
+print_last:
+    la a0, fmt_last
+
+print_value:
     call printf
 
     addi s5, s5, 1      
